@@ -1,0 +1,9 @@
+{
+  "mcpServers": {
+    "project-tracker": {
+      "command": "python",
+      "args": ["D:/UxV/engineering-projects/CC-Mastery/mcp_demo/project_tracker.py"],
+      "type": "stdio"
+    }
+  }
+}

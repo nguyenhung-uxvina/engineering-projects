@@ -1,0 +1,39 @@
+{
+  "permissions": {
+    "allow": [
+      "WebFetch(domain:datasheets.raspberrypi.com)",
+      "WebFetch(domain:www.raspberrypi.com)",
+      "WebFetch(domain:www.farnell.com)",
+      "WebFetch(domain:www.waveshare.com)",
+      "WebFetch(domain:forums.raspberrypi.com)",
+      "WebFetch(domain:docs.rs-online.com)",
+      "WebFetch(domain:docs.cirkitdesigner.com)",
+      "WebFetch(domain:www.cnx-software.com)",
+      "WebFetch(domain:www.scribd.com)",
+      "WebFetch(domain:www.digikey.com)",
+      "mcp__hyperbrowser__scrape_webpage",
+      "WebFetch(domain:loco.lab.asu.edu)",
+      "WebFetch(domain:www.seeedstudio.com)",
+      "WebFetch(domain:picockpit.com)",
+      "WebFetch(domain:www.pishop.us)",
+      "WebFetch(domain:www.canakit.com)",
+      "WebFetch(domain:hackaday.com)",
+      "WebFetch(domain:www.cytron.io)",
+      "WebFetch(domain:www.jeffgeerling.com)",
+      "WebFetch(domain:pipci.jeffgeerling.com)",
+      "mcp__hyperbrowser__browser_use_agent",
+      "mcp__hyperbrowser__claude_computer_use_agent",
+      "WebFetch(domain:jamesachambers.com)",
+      "WebFetch(domain:www.adafruit.com)",
+      "WebFetch(domain:grabcad.com)",
+      "WebFetch(domain:pip.raspberrypi.com)",
+      "WebFetch(domain:pip-assets.raspberrypi.com)",
+      "WebFetch(domain:www.elecrow.com)",
+      "WebFetch(domain:raspberrypi.dk)",
+      "WebFetch(domain:github.com)",
+      "WebFetch(domain:studylib.net)",
+      "WebFetch(domain:cdn-shop.adafruit.com)",
+      "WebFetch(domain:www.printables.com)"
+    ]
+  }
+}

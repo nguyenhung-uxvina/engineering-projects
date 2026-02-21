@@ -1,0 +1,70 @@
+# =============================================================================
+# Level 3: Issue-to-PR — Claude implements issues and creates branches
+# =============================================================================
+# The "shoot and forget" pattern from the curriculum.
+#
+# What it does:
+#   1. User creates/labels issue with "claude" label (or assigns claude[bot])
+#   2. Claude reads the issue, creates a branch, implements the code
+#   3. Claude commits, pushes, and posts a link for the user to create a PR
+#   4. Human reviews, creates PR, merges (2 human approvals recommended)
+#
+# Security model:
+#   - Claude creates branches, NOT PRs (human must create PR)
+#   - Tool allowlist restricts what Claude can execute
+#   - Only repo write-access users can trigger via labels/assignments
+#
+# This is the "PR-from-Anywhere" foundation:
+#   Slack alert → GitHub issue → this workflow → branch with fix → human PR
+# =============================================================================
+
+name: Claude Issue Worker
+
+on:
+  issues:
+    types: [opened, assigned, labeled]
+  issue_comment:
+    types: [created]
+
+jobs:
+  implement:
+    if: |
+      (github.event_name == 'issues' && github.event.action == 'labeled' && github.event.label.name == 'claude') ||
+      (github.event_name == 'issues' && github.event.action == 'assigned' && github.event.assignee.login == 'claude[bot]') ||
+      (github.event_name == 'issues' && github.event.action == 'opened' && contains(github.event.issue.body, '@claude')) ||
+      (github.event_name == 'issue_comment' && contains(github.event.comment.body, '@claude'))
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+      issues: write
+      id-token: write
+      actions: read
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0  # Full history for better context
+
+      - name: Implement issue with Claude
+        id: claude
+        uses: anthropics/claude-code-action@v1
+        with:
+          anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
+          label_trigger: "claude"
+          assignee_trigger: "claude[bot]"
+
+          # Branch naming: claude/issue-42-fix-login-bug
+          branch_prefix: "claude/"
+
+          claude_args: |
+            --max-turns 30
+            --allowedTools "Read,Write,Edit,Glob,Grep,Bash(git:*),Bash(npm test:*),Bash(npm run lint:*),Bash(python -m pytest:*)"
+
+          # Settings can include environment variables and MCP config
+          settings: |
+            {
+              "env": {
+                "NODE_ENV": "test"
+              }
+            }

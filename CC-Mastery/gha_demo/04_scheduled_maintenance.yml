@@ -1,0 +1,115 @@
+# =============================================================================
+# Level 4: Scheduled Maintenance + CI Failure Debug
+# =============================================================================
+# Two jobs in one workflow:
+#   A) Weekly maintenance scan (cron)
+#   B) CI failure debugging (on @claude mention with actions:read)
+#
+# This demonstrates:
+#   - schedule trigger (cron)
+#   - workflow_dispatch (manual)
+#   - structured output (--json-schema) for downstream decisions
+#   - additional_permissions for CI log access
+#   - The "flywheel" concept: findings → issues → CLAUDE.md updates
+# =============================================================================
+
+name: Claude Maintenance & Debug
+
+on:
+  schedule:
+    - cron: "0 9 * * 1"  # Every Monday at 9:00 UTC
+  workflow_dispatch:        # Manual trigger
+  issue_comment:
+    types: [created]        # For CI debug requests
+
+jobs:
+  # ─── Job A: Weekly maintenance scan ───────────────────────────────────
+  maintenance:
+    if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      issues: write
+      id-token: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
+      - name: Run maintenance scan
+        id: scan
+        uses: anthropics/claude-code-action@v1
+        with:
+          anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
+
+          prompt: |
+            REPO: ${{ github.repository }}
+
+            Perform weekly repository health check:
+            1. Scan for TODO/FIXME/HACK comments added in the last 7 days
+            2. Check for files >500 lines that might need splitting
+            3. Look for duplicate code patterns
+            4. Verify CLAUDE.md is consistent with actual project structure
+            5. Check for common anti-patterns (hardcoded secrets, unused imports)
+
+            Return structured findings.
+
+          claude_args: |
+            --max-turns 15
+            --model claude-sonnet-4-6
+            --allowedTools "Read,Glob,Grep,Bash(git log:*),Bash(wc:*)"
+            --json-schema '{"type":"object","properties":{"findings":{"type":"array","items":{"type":"object","properties":{"category":{"type":"string"},"severity":{"type":"string","enum":["low","medium","high"]},"file":{"type":"string"},"description":{"type":"string"}},"required":["category","severity","description"]}},"summary":{"type":"string"},"claude_md_updates":{"type":"array","items":{"type":"string"}}},"required":["findings","summary"]}'
+
+      # Use structured output for downstream decisions
+      - name: Create issue if high-severity findings
+        if: contains(steps.scan.outputs.structured_output, '"high"')
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh issue create \
+            --title "Weekly Scan: High-severity findings detected" \
+            --body "$(echo '${{ steps.scan.outputs.structured_output }}' | python3 -c '
+          import json, sys
+          data = json.load(sys.stdin)
+          print("## Summary\n" + data.get("summary", "N/A"))
+          print("\n## High-Severity Findings")
+          for f in data.get("findings", []):
+              if f.get("severity") == "high":
+                  print(f"- **{f[\"category\"]}** ({f.get(\"file\", \"N/A\")}): {f[\"description\"]}")
+          if data.get("claude_md_updates"):
+              print("\n## Suggested CLAUDE.md Updates")
+              for u in data["claude_md_updates"]:
+                  print(f"- {u}")
+          ')" \
+            --label "maintenance,claude"
+
+  # ─── Job B: CI failure debugging ──────────────────────────────────────
+  ci-debug:
+    if: |
+      github.event_name == 'issue_comment' &&
+      contains(github.event.comment.body, '@claude') &&
+      contains(github.event.comment.body, 'debug')
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: write
+      issues: write
+      actions: read           # Base permission for CI
+      id-token: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 1
+
+      - name: Debug CI failure
+        uses: anthropics/claude-code-action@v1
+        with:
+          anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
+          # Request additional permissions for CI log access
+          additional_permissions: |
+            actions: read
+          claude_args: |
+            --max-turns 15
+            --allowedTools "Read,Glob,Grep,Bash(gh run:*),Bash(gh pr:*),mcp__github_ci__get_ci_status,mcp__github_ci__get_workflow_run_details,mcp__github_ci__download_job_log"

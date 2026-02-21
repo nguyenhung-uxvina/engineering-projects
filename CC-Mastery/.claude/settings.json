@@ -1,0 +1,55 @@
+{
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python d:/UxV/engineering-projects/CC-Mastery/.claude/hooks/log_bash.py",
+            "statusMessage": "Logging Bash command..."
+          },
+          {
+            "type": "command",
+            "command": "python d:/UxV/engineering-projects/CC-Mastery/.claude/hooks/block_commit.py",
+            "statusMessage": "Running pre-commit tests..."
+          }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "Write|Edit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python d:/UxV/engineering-projects/CC-Mastery/.claude/hooks/track_file_changes.py",
+            "statusMessage": "Tracking file change..."
+          }
+        ]
+      }
+    ],
+    "UserPromptSubmit": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python d:/UxV/engineering-projects/CC-Mastery/.claude/hooks/prompt_hints.py",
+            "statusMessage": "Checking for context hints..."
+          }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python d:/UxV/engineering-projects/CC-Mastery/.claude/hooks/stop_logger.py",
+            "statusMessage": "Logging activity..."
+          }
+        ]
+      }
+    ]
+  }
+}

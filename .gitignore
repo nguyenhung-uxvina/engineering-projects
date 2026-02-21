@@ -1,0 +1,12 @@
+# Obsidian
+.obsidian/
+obsidian-vault-dmir/
+
+# Artifacts
+excalidraw.log
+nul
+
+# System
+.DS_Store
+Thumbs.db
+desktop.ini
